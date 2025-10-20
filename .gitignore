@@ -1,0 +1,15 @@
+# Ignore specific folders
+data/
+Airbnb_processing_csv_chunks/
+
+# Ignore specific file types
+*.csv
+*.pkl
+*.json
+.env
+
+# Ignore GCP config file
+src/doorstep_webscraper/gcp_constants.py
+
+# Python cache
+__pycache__/

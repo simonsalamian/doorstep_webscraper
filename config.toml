@@ -1,0 +1,30 @@
+[project]
+name = "doorstep_webscraper"
+version = "5.0.2"
+description = "Web scraper for Airbnb listings and pricing data"
+authors = ["Simon Salamian <simonsalamian@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/simonsalamian/doorstep_webscraper"
+repository = "https://github.com/simonsalamian/doorstep_webscraper"
+keywords = ["airbnb", "scraper", "webscraper", "data"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W"]
+ignore = ["E501"]
+
+[custom_config]
+## Which additional APIs to call. The more requests, the longer the web scrape takes
+## Note the web scraper is currently in preview mode, many results are limited to 50 rows
+scrape_calendar = true
+scrape_weekly_pricing = true
+scrape_description = true
+translate_description_to_English = true
+scrape_reviews = true
+
+## Open the resulting CSV files automatically after the scraping finishes
+open_csv_on_completion = false
+
+## Logging level for script output (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+log_level = "INFO"

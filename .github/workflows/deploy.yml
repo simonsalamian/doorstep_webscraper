@@ -1,0 +1,27 @@
+name: Deploy to VM
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: SSH to VM and deploy
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_IP_ADDRESS }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/doorstep_webscraper
+            rm -r data
+            rm -r Airbnb_processing_csv_chunks
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo reboot
