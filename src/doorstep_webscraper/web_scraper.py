@@ -98,6 +98,9 @@ class WebScraper:
         
         self.downloaded_listingIDs = file_mgr.listJSONFilesInFolder('overview')
         self.updated_listingIDs = []
+
+        if self.runner_type == 'explore':
+            self.preview_mapTileList = []
     
         if self.runner_type == 'stays':
             session.check_in = None
@@ -149,6 +152,7 @@ class WebScraper:
 
         For each page:
             - Extracts listing data from the response.
+            - If Explore run, updates the Preview_MapTile list, for use in pricing run
             - Logs and saves the response if no listings are found.
             - Processes the extracted listings based on the runner type.
 
@@ -158,6 +162,11 @@ class WebScraper:
             initial_response (dict): The first API response for this tile to avoid an extra request.
         """
         offset = 0
+
+        ## Build preview MapTile List for first 70 listings in Explore API
+        ## This list is used to efficiently get pricing data in the pricing run
+        if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
+            self._updatePreview_mapTiles(coords)
 
         while offset < total_count:
 
@@ -308,6 +317,11 @@ class WebScraper:
             return dict_subset(response, 'data', 'presentation', 'staysSearch', 'results', 'searchResults')
         return []
     
+    def _updatePreview_mapTiles(self, coords):
+        if coords not in self.preview_mapTileList:
+            self.preview_mapTileList.append(coords)
+            logger.debug(f"Adding {coords} to preview_mapTile list, list length: {len(self.preview_mapTileList)}")
+    
     def getMapTileList(self):
         """
         Paste in an Airbnb URL if not set in config.toml, and extract map tile coordinates.
@@ -358,6 +372,7 @@ class WebScraper:
 
         Method:
             - Sets up the scraper context and initializes the list of map tiles to process.
+            - If explore or stays, it starts with the inital map tile. If pricing, it uses the first few map tiles from Explore API.
             - Iterates over each tile's coordinates:
                 - Fetches the initial response for the tile.
                 - Checks the total number of listings. If the total exceeds 240 and zoom < 23,
@@ -369,12 +384,13 @@ class WebScraper:
         """
         self.runner_type = runner_type
         self._setup_scraper_context(**kwargs)
-        mapTile_list = self.mapTile_init.copy()
-        tileCount = 0
 
-        ## Do not record each start of pricing API, as logged in runAirbnbScrape()
-        if self.runner_type != 'pricing':
-            logger.info(f"Starting {self.runner_type} API map scrape")
+        if runner_type != 'pricing':
+            mapTile_list = self.mapTile_init.copy() ## From starting mapTile
+            logger.info(f"Starting {self.runner_type} API map scrape")      ## Do not record each start of pricing API, as logged in runAirbnbScrape()
+        else:
+            mapTile_list = self.preview_mapTileList.copy()  ## From inital mapTiles saved in explore run
+            logger.debug(f"Using preview list, length: {len(mapTile_list)}")
     
         ## Iterate through the list of dicts containing co-ordinates
         while mapTile_list:
@@ -395,12 +411,6 @@ class WebScraper:
             
             ## Extract and save the data
             self._processTile(coords, total, initial_response)
-            tileCount += 1
-
-            ## If 90 pricing files already updated, break out
-            if self.runner_type == 'pricing' and (len(self.updated_listingIDs) >= 90 or tileCount > 8):
-                logger.debug('Reached 90 Pricing files updated, break out of map tiles')
-                break
         
         if self.runner_type != 'pricing':
             logger.info(f"Completed {self.runner_type} API scrape")

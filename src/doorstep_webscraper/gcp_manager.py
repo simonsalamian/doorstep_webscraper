@@ -50,7 +50,6 @@ def getLocationsToScrape():
 
     query_string = f""" SELECT Location, Country, Currency, isOverview
             FROM `{GCP_BIGQUERY_TABLES['scrapeList']}` WHERE 1=1
-            AND Location = 'Edinburgh'
             """
     
     query_job = bigquery_client.query(query_string)
