@@ -293,6 +293,15 @@ class GCPManager:
         df.to_csv(csv_filename, index=False)
         self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
         self.pushZipToCloud(zip_filename, 'current')
+
+        ## Push to Overview to historic folder for archive
+        logger.info('Pushing Overview to Historic folder')
+        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_AirbnbOverview_{self.ctx.scrape_date_str}.csv'
+        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_AirbnbOverview_{self.ctx.scrape_date_str}.zip"
+        df.to_csv(csv_filename, index=False)
+        self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
+        self.pushZipToCloud(zip_filename, 'historic')
+        os.remove(csv_filename)
         
         logger.info('Overview CSV uploads complete')
 

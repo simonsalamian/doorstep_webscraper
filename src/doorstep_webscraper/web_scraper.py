@@ -484,14 +484,14 @@ class WebScraper:
         return [coords_1, coords_2, coords_3, coords_4]
 
 
-def get_next_weekdays(weeks_to_look_forward=34):
+def get_next_weekdays(weeks_to_look_forward=50):
     """
     Generates a date ranges for upcoming weekdays and weekends over a specified number of weeks.
     Starting from the next Monday (skipping the current week), this function calculates the Monday–Friday
     (weekday) and Friday–Sunday (weekend) ranges for each week and returns them as a list of date pairs.
 
     Args:
-        weeks_to_look_forward (int, optional): Number of future weeks to include. Defaults to 34.
+        weeks_to_look_forward (int, optional): Number of future weeks to include. Defaults to 50.
 
     Returns:
         List[List[str]]: A list of sublists, each containing:

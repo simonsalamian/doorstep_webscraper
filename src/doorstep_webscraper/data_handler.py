@@ -412,6 +412,7 @@ class DataHandler():
             - Availability and booking status
             - Minimum and maximum nights allowed
             - Check-in/check-out availability
+            - Sequential availability/unavailability counts
 
         Args:
             data (dict): Raw calendar data for a single Airbnb listing, with 'Calendar' as a list of date entries with availability info
@@ -419,6 +420,30 @@ class DataHandler():
         Returns:
             pd.DataFrame: DataFrame containing transformed calendar data for one listing
         """
+
+        def _mark_sequence(mask_col, new_col_name, target_value):
+            """
+            Mark for how many consecutive days the listing is available or unavailable for
+            The value is added to teh first day where there is a change
+            """
+            ## Force Integer output (not float)
+            if new_col_name not in df.columns:
+                df[new_col_name] = pd.Series([pd.NA] * len(df), dtype="Int64")
+        
+            count = 0
+            start_index = None
+            for i, val in enumerate(df[mask_col]):
+                if val == target_value:
+                    if count == 0:
+                        start_index = i
+                    count += 1
+                else:
+                    if count > 0 and start_index is not None:
+                        df.at[start_index, new_col_name] = count
+                    count = 0
+                    start_index = None
+            if count > 0 and start_index is not None:
+                df.at[start_index, new_col_name] = count
 
         ## Iterate through each row of the Calendar JSON file
         rows = []
@@ -452,13 +477,20 @@ class DataHandler():
                 'Min_Nights': i['Min_Nights'],
                 'Max_Nights': i['Max_Nights'],
                 'Available_For_Checkin': i['Available_For_Checkin'],
-                'Available_For_Checkout': i['Available_For_Checkout'],
-                'RecordInserted': datetime.strptime(data['RecordInserted'], "%Y-%m-%d %H:%M:%S"),
+                'Available_For_Checkout': i['Available_For_Checkout']
             }
             
             rows.append(this_row_dict)
         
+        ## Convert list of rows to dataFrame, and sort by Calendar Date
         df = pd.DataFrame(rows)
+        df = df.sort_values(by="Calendar_Date", ascending=True).reset_index(drop=True)
+        
+        ## Create column for how many sequential days are Available
+        _mark_sequence("isAvailable", "isAvailable_SequentialDays", True)
+        _mark_sequence("isAvailable", "isUnavailable_SequentialDays", False)
+        df['RecordInserted'] = datetime.strptime(data['RecordInserted'], "%Y-%m-%d %H:%M:%S")
+
         return df
 
     def transform_AirbnbPricing(self, data):
