@@ -38,28 +38,37 @@ class DataHandler():
         
         ## Generate CSV files
         self.JSONfiles_toCompleteCSVfile('Overview')
-        """
-        if self.ctx.scrapeCalendar:
+        
+        if self.ctx.scrapeCalendar and not self.ctx.isWebPreview:
             self.JSONfiles_toCompleteCSVfile('Calendar')
-        if self.ctx.scrapePricing:
+        if self.ctx.scrapePricing and not self.ctx.isWebPreview:
             self.JSONfiles_toCompleteCSVfile('Pricing')
-        if self.ctx.scrapeDescription:
+        if self.ctx.scrapeDescription and not self.ctx.isWebPreview:
             self.JSONfiles_toCompleteCSVfile('Description')
             self.JSONfiles_toCompleteCSVfile('Amenities')
-        if self.ctx.scrapeReviews:
+        if self.ctx.scrapeReviews and not self.ctx.isWebPreview:
             self.JSONfiles_toCompleteCSVfile('Reviews')
+        
+    def CSVfilePreview_Runner(self):
+        """
+        The starting point for converting JSON files to a Preview CSV file
+        Preiews are automatically made based on limited JSON file counts, this
+        function creates preview files with a different naming convention
         """
 
-    def CSVfilePreview_Runner(self):
         ## Get first entry date from the first JSON file's RecordInserted field. Used for Scrape Date field and CSV file naming
         self.first_entry_date = self.getFirstEntryDate()
-        self.first_entry_date_str = self.first_entry_date.strftime("%d%m%Y")
+        self.first_entry_date_str = self.first_entry_date.strftime("%Y%m%d")
 
-        self.JSONfiles_toPreviewCSVfile('Calendar')
-        self.JSONfiles_toPreviewCSVfile('Pricing')
-        self.JSONfiles_toPreviewCSVfile('Description')
-        self.JSONfiles_toPreviewCSVfile('Amenities')
-        self.JSONfiles_toPreviewCSVfile('Reviews')
+        if self.ctx.scrapeCalendar:
+            self.JSONfiles_toPreviewCSVfile('Calendar')
+        if self.ctx.scrapePricing:
+            self.JSONfiles_toPreviewCSVfile('Pricing')
+        if self.ctx.scrapeDescription:
+            self.JSONfiles_toPreviewCSVfile('Description')
+            self.JSONfiles_toPreviewCSVfile('Amenities')
+        if self.ctx.scrapeReviews:
+            self.JSONfiles_toPreviewCSVfile('Reviews')
 
     def getFirstEntryDate(self):
         """

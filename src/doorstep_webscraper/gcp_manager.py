@@ -64,14 +64,12 @@ def getLocationsToScrape():
     location = first_row['Location']
     country = first_row['Country']
     currency = first_row['Currency']
-    is_overview = first_row['isOverview']
 
     logger.info(f"Found {results.total_rows} location rows")
     
     return {'location': location,
             'country': country,
-            'currency': currency,
-            'isOverview': is_overview}
+            'currency': currency}
 
 def get_customLocationsToScrape():
     """
@@ -277,31 +275,35 @@ class GCPManager:
         
         df = pandas_gbq.read_gbq(query, project_id=project_id, credentials=credentials)
         df['RecordInserted'] = pd.to_datetime(df['RecordInserted'])
-        self.overview_df = df
+
+        ## Generate Current Overview file for website access
+        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview.csv'
+        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview.zip"
+        df.to_csv(csv_filename, index=False)
+        self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
+
+        ## Generate Historic Overview filer for website access
+        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview_{self.ctx.scrape_date_str}.csv'
+        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview_{self.ctx.scrape_date_str}.zip"
+        df.to_csv(csv_filename, index=False)
+        self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
+        os.remove(csv_filename)
         
     def pushOverviewDataFrame_toCloudStorage(self):
         """
         Zip the Overview csv file, and push to current folder for website access
+        TO DO: Make zip file names centrally accessible
         """
-        
-        df = self.overview_df
         
         ## Push to Overview to current folder for website access
         logger.info('Pushing Overview to Current folder')
-        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_AirbnbOverview.csv'
-        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_AirbnbOverview.zip"
-        df.to_csv(csv_filename, index=False)
-        self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
+        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview.zip"
         self.pushZipToCloud(zip_filename, 'current')
-
+        
         ## Push to Overview to historic folder for archive
         logger.info('Pushing Overview to Historic folder')
-        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_AirbnbOverview_{self.ctx.scrape_date_str}.csv'
-        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_AirbnbOverview_{self.ctx.scrape_date_str}.zip"
-        df.to_csv(csv_filename, index=False)
-        self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
+        zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview_{self.ctx.scrape_date_str}.zip"
         self.pushZipToCloud(zip_filename, 'historic')
-        os.remove(csv_filename)
         
         logger.info('Overview CSV uploads complete')
 

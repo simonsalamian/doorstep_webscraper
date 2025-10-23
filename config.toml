@@ -15,6 +15,9 @@ select = ["E", "F", "W"]
 ignore = ["E501"]
 
 [custom_config]
+## Webstie preview - if True, only a sample of the calendar, pricing etc. datasets are downloaded
+is_web_preview = true
+
 ## Which additional APIs to call. The more requests, the longer the web scrape takes
 ## Note the web scraper is currently in preview mode, many results are limited to 50 rows
 scrape_calendar = true
@@ -27,4 +30,6 @@ scrape_reviews = true
 open_csv_on_completion = false
 
 ## Logging level for script output (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+## Note: Does not work, 23/10/2025
+## TO DO: Apply this to config_logging.py
 log_level = "INFO"

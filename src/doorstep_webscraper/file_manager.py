@@ -144,7 +144,7 @@ class FileManager:
         with open(zip_file_name, 'wb') as f:
             f.write(zip_buffer.getvalue())
 
-    def ZipAllPreviewFiles_ToCloud(self):
+    def ZipAllPreviewFiles_ToCloud(self):        
         csv_files = [
             os.path.join(self.ctx.output_folder, file)
             for file in os.listdir(self.ctx.output_folder)

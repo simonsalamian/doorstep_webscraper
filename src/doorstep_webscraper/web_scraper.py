@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import shutil
 import base64
 import tomllib
+import sys
 import subprocess
 
 ## Doorstep Analytics Scripts
@@ -54,12 +55,15 @@ class Context:
             config = tomllib.load(f)
 
         ## Boolean options. If true, the web scraper downloads more data but runs for longer
+        self.isWebPreview = config['custom_config']['is_web_preview']
         self.scrapeCalendar = config['custom_config']['scrape_calendar']
         self.scrapePricing = config['custom_config']['scrape_weekly_pricing']
         self.scrapeDescription = config['custom_config']['scrape_description']
         self.translateDescriptionToEnglish = config['custom_config']['translate_description_to_English']
         self.scrapeReviews = config['custom_config']['scrape_reviews']
         self.openCSVonCompletion = config['custom_config']['open_csv_on_completion']
+
+        self.log_on_multiples = 200 if self.isWebPreview else 20
 
         ## Recommended set to INFO by default
         self.log_level = config['custom_config']['log_level']
@@ -69,7 +73,6 @@ class Context:
         self.country = location_dict['country']
         self.location = location_dict['location']
         self.currency = location_dict['currency']
-        self.isOverview = location_dict['isOverview']
         
     def UpdateContextWithHandlers(self, file_mgr, gcp_manager, data_handler, session):
         """
@@ -113,11 +116,11 @@ class WebScraper:
     def _trackDownloaded(self, listing_id):
         """
         Track newly downloaded listing ID. Return True if listing ID is not already saved, else False
-        Log every 20 new listings
+        Log every 20/200 new listings, depending on preview mode
         """
         if listing_id not in self.downloaded_listingIDs:
             self.downloaded_listingIDs.append(listing_id)
-            if len(self.downloaded_listingIDs) % 200 == 0:
+            if len(self.downloaded_listingIDs) % self.ctx.log_on_multiples == 0:
                 logger.info(f"Downloaded {len(self.downloaded_listingIDs)} listings")
             return True
         else:
@@ -126,11 +129,11 @@ class WebScraper:
     
     def _trackUpdated(self, listing_id):
         """
-        Track newly updated listing IDs, return True if not already updated, and log every 200 updates.
+        Track newly updated listing IDs, return True if not already updated, and log every 20/200 updates, depending on preview mode.
         """
         if listing_id not in self.updated_listingIDs:
             self.updated_listingIDs.append(listing_id)
-            if len(self.updated_listingIDs) % 200 == 0 and self.runner_type != 'pricing':
+            if len(self.updated_listingIDs) % self.ctx.log_on_multiples == 0 and self.runner_type != 'pricing':
                 logger.info(f"Updated {len(self.updated_listingIDs)} listings")
             return True
     
@@ -165,6 +168,8 @@ class WebScraper:
 
         ## Build preview MapTile List for first 70 listings in Explore API
         ## This list is used to efficiently get pricing data in the pricing run
+        if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
+            self._updatePreview_mapTiles(coords)
         if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
             self._updatePreview_mapTiles(coords)
 
@@ -252,6 +257,7 @@ class WebScraper:
 
             ## -------- STAYS --------
             elif self.runner_type == 'stays':
+
                 ## Case 1: Augment existing Explore listing sata (existing) with extra stays and basic pricing data (e)
                 if (e.get('__typename') == 'StaySearchResult' and 
                     listing_id in self.downloaded_listingIDs and 
@@ -276,6 +282,7 @@ class WebScraper:
                     t = dict_subset(response, 'data', 'presentation', 'stayProductDetailPage')
                     if t and t.get('sections') and not dict_subset(t, 'sections', 'metadata', 'errorData'):
                         e = {**e, **t}
+                        ctx.file_mgr.saveJSONFile(e, 'debug', listing_id)
                     else:
                         ## Very rarely, a request returns an error string in the metadata. In this case the listing is ignored
                         logger.warning(f"Listing ID {listing_id} has error metadata. Saved to debug/error_data.json")
@@ -292,16 +299,17 @@ class WebScraper:
                 continue
 
             ## After Listing data, save calendar, description, reviews
-            if ctx.scrapeCalendar and len(self.downloaded_listingIDs) <= 50:
-                ctx.session.scrapeCalendarToFile(listing_id)
+            if (self.ctx.isWebPreview and len(self.downloaded_listingIDs) <= 50) or not self.ctx.isWebPreview:
+                if ctx.scrapeCalendar:
+                    ctx.session.scrapeCalendarToFile(listing_id)
 
-            if ctx.scrapeDescription and len(self.downloaded_listingIDs) <= 50:
-                ctx.session.scrapeDescriptionToFile(listing_id)
-                if ctx.translateDescriptionToEnglish and ctx.country not in DO_NOT_TRANSLATE:
-                    ctx.session.scrapeDescriptionToFile(listing_id, translate=True)
+                if ctx.scrapeDescription:
+                    ctx.session.scrapeDescriptionToFile(listing_id)
+                    if ctx.translateDescriptionToEnglish and ctx.country not in DO_NOT_TRANSLATE:
+                        ctx.session.scrapeDescriptionToFile(listing_id, translate=True)
 
-            if ctx.scrapeReviews and len(self.downloaded_listingIDs) <= 50:
-                ctx.session.scrapeReviewsToFile(e, listing_id)
+                if ctx.scrapeReviews:
+                    ctx.session.scrapeReviewsToFile(e, listing_id)
 
             ## Finally; Save overview JSON file
             ctx.file_mgr.saveJSONFile(e, 'overview', listing_id)
@@ -385,11 +393,15 @@ class WebScraper:
         self.runner_type = runner_type
         self._setup_scraper_context(**kwargs)
 
-        if runner_type != 'pricing':
-            mapTile_list = self.mapTile_init.copy() ## From starting mapTile
-            logger.info(f"Starting {self.runner_type} API map scrape")      ## Do not record each start of pricing API, as logged in runAirbnbScrape()
-        else:
-            mapTile_list = self.preview_mapTileList.copy()  ## From inital mapTiles saved in explore run
+        ## Use MapTile for all
+        if not self.ctx.isWebPreview:   ## For non-preview, use full MapTile set
+            mapTile_list = self.mapTile_init.copy()
+            logger.info(f"Starting {self.runner_type} API map scrape")
+        elif self.ctx.isWebPreview and runner_type != 'pricing':  ## For preview, use full MapTile set except for with pricing
+            mapTile_list = self.mapTile_init.copy()
+            logger.info(f"Starting {self.runner_type} API map scrape")
+        else:   # Otherwise, use preview MapTile set for pricing in preview mode
+            mapTile_list = self.preview_mapTileList.copy()  
             logger.debug(f"Using preview list, length: {len(mapTile_list)}")
     
         ## Iterate through the list of dicts containing co-ordinates
@@ -554,6 +566,7 @@ def runAirbnbScrape(ctx):
 
     airAPI = WebScraper(ctx)
     airAPI.iterateMapTiles('explore')
+    airAPI.iterateMapTiles('explore')
     airAPI.iterateMapTiles('stays')
 
     ## Do not run pricing API if disabled in config.toml
@@ -619,8 +632,11 @@ if __name__ == '__main__':
     ## Web scraper
     generate_working_folders(ctx)
     runAirbnbScrape(ctx)
+    generate_working_folders(ctx)
+    runAirbnbScrape(ctx)
 
     ## Backup JSON files in Tar.gz
+    file_mgr.BackupFiles_ToTarFile_ToCloud()
     file_mgr.BackupFiles_ToTarFile_ToCloud()
 
     ## Generate CSV from JSON files
@@ -638,6 +654,11 @@ if __name__ == '__main__':
     ## Download Output table from BigQuery to Dataframe memory, to cloud storage
     gcp_manager.GenerateOverviewDataFrame()
     gcp_manager.pushOverviewDataFrame_toCloudStorage()
+
+    ## If not web preview mode, stop before additional steps run
+    if not ctx.isWebPreview:
+        logger.info("No need for preview uploads and website housekeeping, exiting...")
+        sys.exit(0)
 
     ## Move preview files to Cloud Storage
     data_handler.CSVfilePreview_Runner()
