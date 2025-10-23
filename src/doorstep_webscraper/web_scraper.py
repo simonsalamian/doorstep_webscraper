@@ -170,8 +170,6 @@ class WebScraper:
         ## This list is used to efficiently get pricing data in the pricing run
         if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
             self._updatePreview_mapTiles(coords)
-        if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
-            self._updatePreview_mapTiles(coords)
 
         while offset < total_count:
 
@@ -565,7 +563,6 @@ def runAirbnbScrape(ctx):
     """
 
     airAPI = WebScraper(ctx)
-    airAPI.iterateMapTiles('explore')
     airAPI.iterateMapTiles('explore')
     airAPI.iterateMapTiles('stays')
 
