@@ -20,14 +20,14 @@ class SessionHandler:
     def __init__(self, context):
         ## Initialize a session using the Python Requests module. Store Airbnb cookie data to avoid bot detection
         logger.info("Pinging Airbnb.com for inital cookies and session data")
-        self.context = context
+        self.ctx = context
         self.session = requests.Session()
         
         ## Run two session requests to get cookies, to be applied to requests module to avoid detection
         self.session.get("https://www.airbnb.com", headers=self.randomHeaders())
         r_sleep(2)
         
-        self.session.get(f'https://www.airbnb.com/s/{self.context.location}--United-Kingdom', headers=self.randomHeaders())
+        self.session.get(f'https://www.airbnb.com/s/{self.ctx.location}--United-Kingdom', headers=self.randomHeaders())
         r_sleep(2)
         
     def randomHeaders(self):    
@@ -559,7 +559,7 @@ class SessionHandler:
             
             ## Create a clean dict with metadata, and save each day's availability as a list element
             c_dict = {'Date_of_Data_Collection': datetime.now().strftime("%Y-%m-%d"), 'ListingID': listing_id,'Calendar': day_list}
-            self.context.file_mgr.saveJSONFile(c_dict, 'calendar', listing_id)
+            self.ctx.file_mgr.saveJSONFile(c_dict, 'calendar', listing_id)
             
     def extractPricingToFile(self, e, listing_id):
         """
@@ -589,9 +589,9 @@ class SessionHandler:
         pricing_dict['structuredDisplayPrice'] = dict_subset(e, 'structuredDisplayPrice')
         
         ## All API calls go to one pricing file. If the file exists, append to dict "existing_json"
-        existing_json = self.context.file_mgr.readJSONFile('pricing', listing_id)
+        existing_json = self.ctx.file_mgr.readJSONFile('pricing', listing_id)
         if existing_json is None:
-            existing_json = {'listingid': listing_id, 'currency': self.context.currency, 'scrape_datetime': datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 'prices': []}
+            existing_json = {'listingid': listing_id, 'currency': self.ctx.currency, 'scrape_datetime': datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 'prices': []}
         
         ## Check not duplicating prices:
         current_start_date = datetime.strptime(self.check_in, '%Y-%m-%d')
@@ -606,7 +606,7 @@ class SessionHandler:
                 
         ## Append latest data to exisiting_json and save
         existing_json['prices'].append(pricing_dict)
-        self.context.file_mgr.saveJSONFile(existing_json, 'pricing', listing_id)
+        self.ctx.file_mgr.saveJSONFile(existing_json, 'pricing', listing_id)
         
     def scrapeDescriptionToFile(self, listing_id, translate=False):
         """
@@ -641,11 +641,11 @@ class SessionHandler:
         ## Two dicts within Description file, one for the Original text (untranslated) 
         ## and one for Translated (in English). Original text is always saved first
         if not translate:
-            self.context.file_mgr.saveJSONFile({'originalDescription': d}, 'description', listing_id)
+            self.ctx.file_mgr.saveJSONFile({'originalDescription': d}, 'description', listing_id)
         else:
-            t = self.context.file_mgr.readJSONFile('description', listing_id)
+            t = self.ctx.file_mgr.readJSONFile('description', listing_id)
             t['translatedDescription'] = d
-            self.context.file_mgr.saveJSONFile(t, 'description', listing_id)
+            self.ctx.file_mgr.saveJSONFile(t, 'description', listing_id)
             
     def scrapeReviewsToFile(self, e, listing_id):
         """
@@ -702,7 +702,7 @@ class SessionHandler:
             offset += 24
 
         reviews_dict = {'Date_of_Data_Collection': datetime.now().strftime("%Y-%m-%d"), 'ListingID': listing_id, 'reviews': reviews_list }
-        self.context.file_mgr.saveJSONFile(reviews_dict, 'reviews', listing_id)
+        self.ctx.file_mgr.saveJSONFile(reviews_dict, 'reviews', listing_id)
 
 if __name__ == '__main__':
     print("This is the session handler. Run web_scraper.py instead")
