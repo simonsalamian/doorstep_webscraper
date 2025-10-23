@@ -675,6 +675,8 @@ class SessionHandler:
             reviewsCount = int(dict_subset(e, 'sections', 'metadata', 'sharingConfig', 'reviewCount'))
         elif dict_subset(e, 'reviewsCount') is not None:
             reviewsCount = int(dict_subset(e, 'reviewsCount'))
+        elif dict_subset(e, 'metadata', 'sharingConfig', 'reviewCount') is not None:
+            reviewsCount = int(dict_subset(e, 'metadata', 'sharingConfig', 'reviewCount'))
         
         ## Iterate through each page of reviews, add the review details as a dict to reviews_list
         ## Offset represents the page number, with each page containing 24 listings. Offset increases in lots of 24
@@ -692,7 +694,7 @@ class SessionHandler:
             for review in r:
                 reviews_list.append(review)
 
-                if len(reviews_list) >= 20:
+                if len(reviews_list) >= 20 and self.ctx.isWebPreview:
                     offset += 99999  ## Hacky. Force offset > reviewsCount
                     break
 

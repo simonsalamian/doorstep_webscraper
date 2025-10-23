@@ -130,6 +130,15 @@ class FileManager:
             subprocess.Popen(["xdg-open", full_path])
     
     def Zip_CSVfile(self, runner_type, csv_file_name, zip_file_name):
+        """
+        Compress a single CSV file into a ZIP archive.
+
+        Args:
+            runner_type (str): The process or data type the CSV belongs to (e.g., 'Overview', 'Pricing').
+            csv_file_name (str): Full path to the CSV file to be zipped.
+            zip_file_name (str): Full path and name for the output ZIP file.
+        """
+
         logger.info(f'Zipping CSV file for {runner_type}')
         
         ## Zip CSV file
@@ -144,7 +153,16 @@ class FileManager:
         with open(zip_file_name, 'wb') as f:
             f.write(zip_buffer.getvalue())
 
-    def ZipAllPreviewFiles_ToCloud(self):        
+    def ZipAllPreviewFiles_ToCloud(self):
+        """
+        Locate and compress all preview-related CSV files, and full Overview file, in the output folder into a single ZIP archive,
+        optionally including the Data Dictionary file. Upload the resulting ZIP file to Cloud Storage.
+
+        The ZIP includes:
+        - All CSV files matching DoorstepAnalyticsPreview_ or DoorstepAnalytics_ for the current location.
+        - The Data Dictionary file if present.
+        """
+              
         csv_files = [
             os.path.join(self.ctx.output_folder, file)
             for file in os.listdir(self.ctx.output_folder)
@@ -169,13 +187,14 @@ class FileManager:
                 zipf.write(file, arcname=os.path.basename(file))
                 
         self.ctx.gcp_manager.pushZipToCloud(zip_filename, 'preview')
-        
-        ## Clean up files
-        #for file in csv_files:
-        #    os.remove(file)
-        #os.remove(zip_filename)
 
-    def BackupFiles_ToTarFile_ToCloud(self):        
+
+    def BackupFiles_ToTarFile_ToCloud(self):  
+        """
+        Create a tar.gz archive of all files in the output folder, upload it to Cloud Storage, 
+        and remove the local archive after upload. The archive name is based on
+        the current location, country, and scrape date.
+        """      
         archive_tar_filename = f"{self.ctx.location}_{self.ctx.country}_{self.ctx.scrape_date_str}.tar.gz"
         
         logger.info(f'Creating file {archive_tar_filename}')    
