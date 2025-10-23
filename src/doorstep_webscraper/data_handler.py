@@ -990,7 +990,7 @@ def extractPricingValue(price_string: str) -> int | None:
     try:
         m = re.search(r"(\d{1,3}(?:,\d{3})*)(?:\.\d+)?", price_string)
     except:
-        input(price_string)
+        logger.error(f"Invalid price string: {price_string}")
     if m:
         num_str = m.group(1).replace(",", "")
         return int(num_str)
