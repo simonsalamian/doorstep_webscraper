@@ -632,11 +632,8 @@ if __name__ == '__main__':
     ## Web scraper
     generate_working_folders(ctx)
     runAirbnbScrape(ctx)
-    generate_working_folders(ctx)
-    runAirbnbScrape(ctx)
 
     ## Backup JSON files in Tar.gz
-    file_mgr.BackupFiles_ToTarFile_ToCloud()
     file_mgr.BackupFiles_ToTarFile_ToCloud()
 
     ## Generate CSV from JSON files
