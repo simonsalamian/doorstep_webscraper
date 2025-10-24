@@ -170,8 +170,6 @@ class WebScraper:
         ## This list is used to efficiently get pricing data in the pricing run
         if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
             self._updatePreview_mapTiles(coords)
-        if self.runner_type == 'explore' and len(self.downloaded_listingIDs) <= 70:
-            self._updatePreview_mapTiles(coords)
 
         while offset < total_count:
 
@@ -566,7 +564,6 @@ def runAirbnbScrape(ctx):
 
     airAPI = WebScraper(ctx)
     airAPI.iterateMapTiles('explore')
-    airAPI.iterateMapTiles('explore')
     airAPI.iterateMapTiles('stays')
 
     ## Do not run pricing API if disabled in config.toml
@@ -632,11 +629,8 @@ if __name__ == '__main__':
     ## Web scraper
     generate_working_folders(ctx)
     runAirbnbScrape(ctx)
-    generate_working_folders(ctx)
-    runAirbnbScrape(ctx)
 
     ## Backup JSON files in Tar.gz
-    file_mgr.BackupFiles_ToTarFile_ToCloud()
     file_mgr.BackupFiles_ToTarFile_ToCloud()
 
     ## Generate CSV from JSON files
