@@ -318,7 +318,7 @@ class SessionHandler:
 
         ## Set default adults to 1 if not set
         if self.adults is None:
-            adults = 1
+            adults = 2
         else:
             adults = self.adults
 
@@ -408,7 +408,7 @@ class SessionHandler:
             "variables": {
                 "id": listing_id_encoded,
                 "pdpSectionsRequest": {
-                    "adults": "1",
+                    "adults": "2",
                     "amenityFilters": None,
                     "bypassTargetings": False,
                     "categoryTag": None,

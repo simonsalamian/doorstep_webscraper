@@ -628,23 +628,23 @@ if __name__ == '__main__':
     
     ## Web scraper
     generate_working_folders(ctx)
-    runAirbnbScrape(ctx)
+    #runAirbnbScrape(ctx)
 
     ## Backup JSON files in Tar.gz
-    file_mgr.BackupFiles_ToTarFile_ToCloud()
+    #file_mgr.BackupFiles_ToTarFile_ToCloud()
 
     ## Generate CSV from JSON files
     data_handler.CSVfileBuilder_Runner()
 
     ## Push CSV files to BigQuery
     gcp_manager.CSVtoBigQuery_runner()
-
+    
     ## Run Neighbourhood ML
     Neighbourhood(ctx)
 
     ## Run Dataform
     gcp_manager.InvokeDataform()
-
+    
     ## Download Output table from BigQuery to Dataframe memory, to cloud storage
     gcp_manager.GenerateOverviewDataFrame()
     gcp_manager.pushOverviewDataFrame_toCloudStorage()
@@ -657,10 +657,11 @@ if __name__ == '__main__':
     ## Move preview files to Cloud Storage
     data_handler.CSVfilePreview_Runner()
     file_mgr.ZipAllPreviewFiles_ToCloud()
-
-    ## Update recently updated
-    gcp_manager.UpdateWebsiteTables() 
     
+    ## Update recently updated and aggregated web tables
+    #gcp_manager.UpdateAggregatedTables() ## Trial not using
+    gcp_manager.UpdateWebsiteTables() 
+
     ## Log completion
     gcp_manager.LogCompletionInBigQuery()
     

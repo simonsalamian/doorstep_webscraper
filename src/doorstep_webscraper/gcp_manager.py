@@ -48,7 +48,7 @@ def getLocationsToScrape():
         - For local systems without GCP access, run get_customLocationsToScrape() instead
     """
 
-    query_string = f""" SELECT Location, Country, Currency, isOverview
+    query_string = f""" SELECT Location, Country, Currency
             FROM `{GCP_BIGQUERY_TABLES['scrapeList']}` WHERE 1=1
             """
     
@@ -409,6 +409,17 @@ class GCPManager:
             SELECT Country, Location, COUNT(Airbnb_ListingID) AS Airbnb_Listings
             FROM {GCP_BIGQUERY_TABLES['aggregatedTable']}
             GROUP BY Country, Location ORDER BY MAX(RecordInserted) DESC LIMIT 3; """ )
+        
+    def UpdateAggregatedTables(self):
+        for aggregated_table in ['overview', 'neighbourhood']:
+            self.runQuery(f"""
+                DELETE FROM `{GCP_BIGQUERY_TABLES['preaggregatedTablePrefix']}{aggregated_table}`
+                WHERE Location = '{self.ctx.location}' AND Country = '{self.ctx.country}';
+
+                INSERT INTO `{GCP_BIGQUERY_TABLES['preaggregatedTablePrefix']}{aggregated_table}`
+                ( SELECT * FROM `{GCP_BIGQUERY_TABLES['preaggregatedFunctionPrefix']}{aggregated_table}`
+                ('{self.ctx.location}', '{self.ctx.country}', NULL, NULL, NULL, NULL, NULL)
+            );""")
     
     def LogCompletionInBigQuery(self):   
         """
@@ -419,6 +430,6 @@ class GCPManager:
         df_logger = pd.DataFrame({ 'Location': [self.ctx.location], 'Country': [self.ctx.country], 'RecordInserted': [self.ctx.scrape_datetime], 'isOverview': 1 })
         logger.info('Adding log finalized entry')
         pandas_gbq.to_gbq(df_logger, f"{GCP_BIGQUERY_TABLES['logCompleted']}", project_id=project_id, if_exists='append', credentials=credentials)
-        
+
 if __name__ == '__main__':
     print("This is the GCP handler. Run web_scraper.py instead")
