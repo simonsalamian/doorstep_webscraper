@@ -2,11 +2,13 @@
 import logging
 import os
 from google.cloud import logging as gcp_logging
+from google.oauth2 import service_account
 from dotenv import load_dotenv
 
 load_dotenv()
 credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-client = gcp_logging.Client.from_service_account_json(credentials_path)
+credentials = service_account.Credentials.from_service_account_file(credentials_path)
+client = gcp_logging.Client(credentials=credentials, project=credentials.project_id)
 
 def setup_logging(location=None, log_level='INFO'):
     """

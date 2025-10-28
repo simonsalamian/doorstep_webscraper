@@ -41,6 +41,8 @@ translate_description_to_English = True
 scrape_reviews = True
 ```
 
+The option *isWebPreview* will only download 50 calendar, description and review files, and limited pricing files. This is set to True for the web updating service, but should be set to false for full dataset downloads.
+
 A gcp_constants file provides private Google Cloud table and storage paths. This is not included in this public repository.
 
 ## Installation
