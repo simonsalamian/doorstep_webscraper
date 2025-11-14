@@ -73,6 +73,8 @@ class Context:
         self.country = location_dict['country']
         self.location = location_dict['location']
         self.currency = location_dict['currency']
+        #self.isWebPreview = location_dict['isWebPreview']
+        #self.GUID = location_dict['GUID']
         
     def UpdateContextWithHandlers(self, file_mgr, gcp_manager, data_handler, session):
         """

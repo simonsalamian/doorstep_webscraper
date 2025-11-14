@@ -146,7 +146,7 @@ class GCPManager:
         Note: For custom script runs, this function call should be replaced with output from get_customMapTileList()
         """
 
-        results = self.runQuery( f""" SELECT * FROM `doorbll-399214.sj_aircloud.location_coords`
+        results = self.runQuery( f""" SELECT * FROM {GCP_BIGQUERY_TABLES['locationCoords']}
             WHERE Location = '{self.ctx.location}' AND Country = '{self.ctx.country}' LIMIT 1 """ )  
         row = next(results)
         
@@ -155,7 +155,7 @@ class GCPManager:
     
     def get_customMapTileList(self):
         """
-        Alternative Co-Ords extraction from string
+        Alternative Co-ords extraction from string
         Paste in an Airbnb URL, and extract map tile coordinates.
         """
 
@@ -277,13 +277,13 @@ class GCPManager:
         df['RecordInserted'] = pd.to_datetime(df['RecordInserted'])
 
         ## Generate Current Overview file for website access
-        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview.csv'
+        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_Overview.csv'
         zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview.zip"
         df.to_csv(csv_filename, index=False)
         self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
 
         ## Generate Historic Overview filer for website access
-        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview_{self.ctx.scrape_date_str}.csv'
+        csv_filename = f'{self.ctx.output_folder}/DoorstepAnalytics_{self.ctx.location}_{self.ctx.country}_Overview_{self.ctx.scrape_date_str}.csv'
         zip_filename = f"{self.ctx.output_folder}/DoorstepAnalytics_Airbnb_{self.ctx.location}_{self.ctx.country}_Overview_{self.ctx.scrape_date_str}.zip"
         df.to_csv(csv_filename, index=False)
         self.ctx.file_mgr.Zip_CSVfile('Overview', csv_filename, zip_filename)
@@ -292,7 +292,6 @@ class GCPManager:
     def pushOverviewDataFrame_toCloudStorage(self):
         """
         Zip the Overview csv file, and push to current folder for website access
-        TO DO: Make zip file names centrally accessible
         """
         
         ## Push to Overview to current folder for website access
